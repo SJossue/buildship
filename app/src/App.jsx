@@ -7,7 +7,7 @@ import TasteProfileView from './components/TasteProfileView.jsx'
 import ListingDetailView from './components/ListingDetailView.jsx'
 import GeneratingOverlay from './components/GeneratingOverlay.jsx'
 import TourView from './components/TourView.jsx'
-import { chat, getContext, updateMemory, deleteMemory } from './api.js'
+import { chat, getContext, updateMemory, deleteMemory, finishInterview, resetSession } from './api.js'
 import { rankListings } from './mock/interview.js'
 import { SPECS } from './mock/data.js'
 
@@ -16,6 +16,18 @@ import { SPECS } from './mock/data.js'
 // [GENERATING ~8s] ─► TOUR. One page, view states, no router. Backend:
 // FastAPI bridge via api.js, mock fallback baked in.
 const NO_NUDGES = { warmth: 0, ornate: 0, light: 0 }
+
+// "Key: value" facts are singular — a new one supersedes the old value for
+// that key (e.g. interview's "Household: partner + a dog" replaces the
+// seeded household) — EXCEPT keys where many can coexist. Local-rail only;
+// mem0 deletion stays a deliberate user action (✕).
+const ACCUMULATIVE_KEYS = new Set(['must-have', 'deal-breaker', 'mood board'])
+const factKey = (text) => {
+  const i = text.indexOf(':')
+  if (i <= 0) return null
+  const key = text.slice(0, i).trim().toLowerCase()
+  return ACCUMULATIVE_KEYS.has(key) ? null : key
+}
 
 export default function App() {
   const [view, setView] = useState('welcome') // welcome | interview | chat | taste | detail | tour
@@ -27,7 +39,10 @@ export default function App() {
   const [thinking, setThinking] = useState(false)
   const [answers, setAnswers] = useState([]) // interview session state: [{questionId, answer}]
   const [rankOrder, setRankOrder] = useState(() => rankListings([]).map((r) => r.listing_id))
-  const [nudges, setNudges] = useState({ jake_v1: NO_NUDGES, pablo_v1: NO_NUDGES })
+  const [nudges, setNudges] = useState({ jake_v1: NO_NUDGES, pablo_v1: NO_NUDGES, guest_v1: NO_NUDGES })
+  // Specs distilled from THIS session's interview (step 4) — override the
+  // seeded SPECS so the passport reflects the actual conversation.
+  const [dynamicSpecs, setDynamicSpecs] = useState({})
   const [detailId, setDetailId] = useState(null)
   const [tasteReturn, setTasteReturn] = useState('chat')
   const factSeq = useRef(0)
@@ -47,7 +62,10 @@ export default function App() {
       const fresh = facts
         .filter((f) => !known.has(f.text))
         .map((f) => ({ ...f, id: `f${++factSeq.current}`, fresh: true }))
-      return fresh.length ? [...prev, ...fresh] : prev
+      if (!fresh.length) return prev
+      const superseded = new Set(fresh.map((f) => factKey(f.text)).filter(Boolean))
+      const kept = prev.filter((m) => !superseded.has(factKey(m.text)))
+      return [...kept, ...fresh]
     })
   }, [])
 
@@ -99,14 +117,28 @@ export default function App() {
     setRankOrder(rankListings([...answers, { questionId, answer }]).map((r) => r.listing_id))
   }, [answers, addFacts])
 
-  const onInterviewDone = useCallback((reason) => {
+  const onInterviewDone = useCallback(async (reason) => {
     if (reason === 'finished') {
+      // distill THIS conversation into the spec the passport shows
+      const spec = await finishInterview(profileId, answers)
+      setDynamicSpecs((prev) => ({
+        ...prev,
+        [profileId]: { ...SPECS[profileId], ...spec, profile_id: profileId },
+      }))
       setTasteReturn('chat')
       setView('taste') // payoff: "here's your taste passport"
     } else {
       keepGoing()
     }
-  }, [keepGoing])
+  }, [keepGoing, profileId, answers])
+
+  // "Things changed — let's catch up" starts a FRESH interview: clear session
+  // answers (and the agent's accumulated interview state); memories persist.
+  const startInterview = useCallback(() => {
+    setAnswers([])
+    resetSession(profileId)
+    setView('interview')
+  }, [profileId])
 
   const openTaste = useCallback(() => {
     setTasteReturn(view)
@@ -140,6 +172,7 @@ export default function App() {
   const rail = (
     <MemoryRail
       profileId={profileId}
+      spec={dynamicSpecs[profileId]}
       memories={memories}
       recalledIds={view === 'chat' ? recalledIds : []}
       nudges={nudges[profileId]}
@@ -172,20 +205,18 @@ export default function App() {
           profileId={profileId}
           onStart={start}
           onKeepGoing={keepGoing}
-          onThingsChanged={() => setView('interview')}
+          onThingsChanged={startInterview}
         />
       )}
 
       {view === 'interview' && (
-        <div className="main">
-          <InterviewView
-            profileId={profileId}
-            answers={answers}
-            onAnswer={onInterviewAnswer}
-            onDone={onInterviewDone}
-          />
-          {rail}
-        </div>
+        /* 08b owns its own right panel ("your taste, taking shape") — no rail */
+        <InterviewView
+          profileId={profileId}
+          answers={answers}
+          onAnswer={onInterviewAnswer}
+          onDone={onInterviewDone}
+        />
       )}
 
       {view === 'chat' && (
@@ -206,6 +237,7 @@ export default function App() {
       {view === 'taste' && (
         <TasteProfileView
           profileId={profileId}
+          spec={dynamicSpecs[profileId]}
           nudges={nudges[profileId]}
           onNudge={(key, value) =>
             setNudges((prev) => ({

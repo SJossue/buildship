@@ -8,7 +8,7 @@
 
 import { LISTINGS } from './data.js'
 
-export const INTERVIEW_LENGTH = 5
+export const INTERVIEW_LENGTH = 6
 
 // trait weights an answer contributes; `must` marks hard filters whose
 // met/unmet state renders as chips (never a numeric score — design 08 §1).
@@ -134,6 +134,27 @@ const QUESTIONS = {
       out.facts.push({ category: 'life_situation', provenance: 'stated', text: `Life centers on: ${answer.toLowerCase()}` })
       return out
     },
+    next: () => 'q_anything',
+  },
+
+  // The standing final question — ALWAYS asked last, whatever path got here.
+  // Open lane: whatever they say lands in the profile ("Also worth knowing").
+  q_anything: {
+    prompt: 'Last one — what else do you want out of your new home? Activities you love, things you want nearby, anything at all.',
+    chips: ['Near a dog park', 'Space for hobbies', 'Good coffee close by', 'Room for guests'],
+    optional: true,
+    effects(answer) {
+      const a = answer.toLowerCase()
+      const out = { weights: {}, must: [], facts: [] }
+      if (/park|trail|outdoor|hik/.test(a)) out.weights.parks = 2
+      if (/walk|coffee|caf|restaurant|bar/.test(a)) out.weights.walkable = 2
+      if (/quiet|peace/.test(a)) out.weights.quiet = 2
+      if (/host|guest|friends|entertain/.test(a)) out.weights.hosting = 2
+      if (/downtown|city/.test(a)) out.weights.downtown = 2
+      if (/yard|garden/.test(a)) out.weights.yard = 2
+      out.facts.push({ category: 'other', provenance: 'stated', text: `Also important: ${answer}` })
+      return out
+    },
     next: () => null,
   },
 }
@@ -151,7 +172,12 @@ export function nextQuestion(answers) {
     return { id: 'q_who', ...pick(QUESTIONS.q_who), asked: 1, total: INTERVIEW_LENGTH }
   }
   const last = answers[answers.length - 1]
-  const id = QUESTIONS[last.questionId]?.next(last.answer)
+  const askedIds = new Set(answers.map((a) => a.questionId))
+  let id = QUESTIONS[last.questionId]?.next(last.answer)
+  // The last slot ALWAYS holds the open catch-all (and it never repeats).
+  if (!id || answers.length === INTERVIEW_LENGTH - 1) {
+    id = askedIds.has('q_anything') ? null : 'q_anything'
+  }
   if (!id) return null
   return { id, ...pick(QUESTIONS[id]), asked: answers.length + 1, total: INTERVIEW_LENGTH }
 }
@@ -195,12 +221,65 @@ export function rankListings(answers) {
   }))
 }
 
+// The panel's palette/aesthetic evolution (08b §7) — deterministic in mock:
+// only the light/mood question moves the taste reading. Mirrored in
+// agent/interview.py _profile_delta_mock — keep in lockstep.
+export function profileDelta(questionId, answer) {
+  if (questionId !== 'q_light') return { palette_add: [], aesthetic: null }
+  const a = answer.toLowerCase()
+  if (/bright|airy/.test(a)) {
+    return { palette_add: ['#F5F3EF', '#D9D2C7', '#A7B5A0'], aesthetic: 'bright & airy modern' }
+  }
+  if (/cozy|warm/.test(a)) {
+    return { palette_add: ['#C8A27A', '#7A5C3E', '#2F3E46'], aesthetic: 'warm & collected' }
+  }
+  return { palette_add: ['#E9E4DB'], aesthetic: null }
+}
+
+// Deterministic exit spec — mirrors agent/interview.py _spec_mock; keep in
+// lockstep. Varies with the light/mood answer so cold runs aren't identical.
+export function buildSpec(profileId, answers) {
+  const light = (answers.find((a) => a.questionId === 'q_light')?.answer ?? '').toLowerCase()
+  const hosts = answers.some((a) => /host|friends|dinner|guests/.test(a.answer.toLowerCase()))
+  let spec
+  if (/bright|airy/.test(light)) {
+    spec = { aesthetic_name: 'bright & airy modern', palette_hex: ['#F5F3EF', '#D9D2C7', '#A7B5A0', '#1C1C1C'], materials: ['pale oak', 'linen', 'ceramic'], lighting_mood: 'bright, even daylight' }
+  } else if (/cozy|warm/.test(light)) {
+    spec = { aesthetic_name: 'warm & collected', palette_hex: ['#C8A27A', '#7A5C3E', '#2F3E46', '#E9E4DB'], materials: ['walnut', 'wool', 'brushed brass'], lighting_mood: 'warm, golden hour' }
+  } else {
+    spec = { aesthetic_name: 'balanced & natural', palette_hex: ['#E9E4DB', '#D9D2C7', '#A7B5A0', '#6F6557'], materials: ['oak', 'linen', 'stone'], lighting_mood: 'soft natural light' }
+  }
+  spec.furniture_vocabulary = (hosts ? ['long gathering table'] : []).concat(['low-profile sofa'])
+  return {
+    profile_id: profileId,
+    ...spec,
+    hard_constraints: ['preserve architecture', 'preserve windows/doors', 'preserve room geometry', 'no people'],
+  }
+}
+
+// "I'm done" detection — mirrors agent/interview.py DONE_RE; keep in lockstep.
+const DONE_RE = new RegExp(
+  "\\b(i'?m (all )?done|that'?s (all|everything|enough|it)|nothing else" +
+  "|no,? (that'?s|we'?re) (it|good|all)|we'?re good|wrap (it )?up|let'?s see (the )?homes)\\b", 'i')
+
+function applyDoneSignal(next, allAnswers, answer) {
+  if (!DONE_RE.test(answer)) return next
+  const asked = new Set(allAnswers.map((a) => a.questionId))
+  if (asked.has('q_anything') || asked.has('final.anything_else')) return null
+  const q = QUESTIONS.q_anything
+  return {
+    id: 'q_anything', ...pick(q),
+    asked: Math.min(allAnswers.length + 1, INTERVIEW_LENGTH), total: INTERVIEW_LENGTH,
+  }
+}
+
 export function recordAnswer(answers, questionId, answer) {
   const fx = QUESTIONS[questionId]?.effects(answer) ?? { facts: [] }
   const all = [...answers, { questionId, answer }]
   return {
     new_facts: fx.facts,
+    profile_delta: profileDelta(questionId, answer),
     ranked: rankListings(all),
-    next: nextQuestion(all),
+    next: applyDoneSignal(nextQuestion(all), all, answer),
   }
 }
