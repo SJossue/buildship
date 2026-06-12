@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import Welcome from './components/Welcome.jsx'
 import InterviewView from './components/InterviewView.jsx'
 import ChatView from './components/ChatView.jsx'
@@ -53,6 +54,7 @@ export default function App() {
   }, [profileId])
 
   const spec = SPECS[profileId]
+  const reduce = useReducedMotion()
 
   // Learned facts (interview answers, chat extractions) animate into the rail.
   const addFacts = useCallback((facts) => {
@@ -183,6 +185,75 @@ export default function App() {
     />
   )
 
+  // One keyed node per view so AnimatePresence can animate enter/exit.
+  // The rail lives OUTSIDE the animated region (persistent UI), shown only on
+  // the views that carry it; interview owns its own panel, so no rail there.
+  const renderView = () => {
+    switch (view) {
+      case 'welcome':
+        return (
+          <Welcome
+            profileId={profileId}
+            onStart={start}
+            onKeepGoing={keepGoing}
+            onThingsChanged={startInterview}
+          />
+        )
+      case 'interview':
+        return (
+          <InterviewView
+            profileId={profileId}
+            answers={answers}
+            onAnswer={onInterviewAnswer}
+            onDone={onInterviewDone}
+          />
+        )
+      case 'chat':
+        return (
+          <ChatView
+            messages={messages}
+            profileId={profileId}
+            thinking={thinking}
+            rankOrder={rankOrder}
+            onSend={sendMessage}
+            onOpenListing={(id) => { setDetailId(id); setView('detail') }}
+            onGenerate={() => setGenerating(true)}
+          />
+        )
+      case 'taste':
+        return (
+          <TasteProfileView
+            profileId={profileId}
+            spec={dynamicSpecs[profileId]}
+            nudges={nudges[profileId]}
+            onNudge={(key, value) =>
+              setNudges((prev) => ({
+                ...prev,
+                [profileId]: { ...prev[profileId], [key]: value },
+              }))
+            }
+            onContinue={onTasteContinue}
+            onBack={() => setView(tasteReturn === 'welcome' ? 'welcome' : tasteReturn)}
+          />
+        )
+      case 'detail':
+        return (
+          <ListingDetailView
+            listingId={detailId}
+            profileId={profileId}
+            onGenerate={() => setGenerating(true)}
+            onBack={() => setView('chat')}
+          />
+        )
+      case 'tour':
+        return <TourView profileId={profileId} onBack={() => setView('chat')} />
+      default:
+        return null
+    }
+  }
+
+  const railVisible = view === 'chat' || view === 'detail' || view === 'tour'
+
   return (
     <div className="shell">
       <header className="topbar">
@@ -200,74 +271,21 @@ export default function App() {
         </div>
       </header>
 
-      {view === 'welcome' && (
-        <Welcome
-          profileId={profileId}
-          onStart={start}
-          onKeepGoing={keepGoing}
-          onThingsChanged={startInterview}
-        />
-      )}
-
-      {view === 'interview' && (
-        /* 08b owns its own right panel ("your taste, taking shape") — no rail */
-        <InterviewView
-          profileId={profileId}
-          answers={answers}
-          onAnswer={onInterviewAnswer}
-          onDone={onInterviewDone}
-        />
-      )}
-
-      {view === 'chat' && (
-        <div className="main">
-          <ChatView
-            messages={messages}
-            profileId={profileId}
-            thinking={thinking}
-            rankOrder={rankOrder}
-            onSend={sendMessage}
-            onOpenListing={(id) => { setDetailId(id); setView('detail') }}
-            onGenerate={() => setGenerating(true)}
-          />
-          {rail}
-        </div>
-      )}
-
-      {view === 'taste' && (
-        <TasteProfileView
-          profileId={profileId}
-          spec={dynamicSpecs[profileId]}
-          nudges={nudges[profileId]}
-          onNudge={(key, value) =>
-            setNudges((prev) => ({
-              ...prev,
-              [profileId]: { ...prev[profileId], [key]: value },
-            }))
-          }
-          onContinue={onTasteContinue}
-          onBack={() => setView(tasteReturn === 'welcome' ? 'welcome' : tasteReturn)}
-        />
-      )}
-
-      {view === 'detail' && (
-        <div className="main">
-          <ListingDetailView
-            listingId={detailId}
-            profileId={profileId}
-            onGenerate={() => setGenerating(true)}
-            onBack={() => setView('chat')}
-          />
-          {rail}
-        </div>
-      )}
-
-      {view === 'tour' && (
-        <div className="main">
-          <TourView profileId={profileId} onBack={() => setView('chat')} />
-          {rail}
-        </div>
-      )}
+      <div className="stage">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={view}
+            className="view-anim"
+            initial={reduce ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, y: -8 }}
+            transition={{ duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {renderView()}
+          </motion.div>
+        </AnimatePresence>
+        {railVisible && rail}
+      </div>
 
       {generating && <GeneratingOverlay profileId={profileId} onDone={onTourReady} />}
     </div>

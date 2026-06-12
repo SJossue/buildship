@@ -1,19 +1,47 @@
 /* VISTA — warm earthy theme. Sand/clay, soft shadows, serif warmth. */
 
 :root {
-  --sand: #f3eee7;
-  --sand-deep: #e8e1d5;
-  --card: #fffdf9;
-  --ink: #2b2722;
-  --ink-soft: #6f6557;
-  --clay: #a9714b;
-  --clay-deep: #8c5a39;
-  --moss: #a7b5a0;
-  --line: #ddd4c6;
-  --radius: 14px;
-  --shadow: 0 2px 16px rgba(63, 50, 35, 0.08);
+  /* warm editorial surfaces */
+  --sand: #f7f3ec;
+  --sand-deep: #e7decf;
+  --card: #fbf8f2;
+  --ink: #2c2620;
+  --ink-soft: #6b6157;
+  --ink-forest: #3a4a42;
+  --clay: #a8794e;
+  --clay-deep: #8a5f38;
+  --moss: #9bae93;
+  --line: #e0d7c7;
+
+  /* type */
   --serif: 'Fraunces', Georgia, 'Times New Roman', serif;
-  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --fs-display: clamp(2.6rem, 1.8rem + 3.6vw, 4.5rem);
+  --fs-h1: clamp(1.9rem, 1.4rem + 2.1vw, 3rem);
+  --fs-h2: clamp(1.4rem, 1.15rem + 1.1vw, 2rem);
+  --fs-eyebrow: 0.72rem;
+  --fs-body: 1rem;
+
+  /* motion — expo ease (the .iv-* rules already read var(--ease)) */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 180ms;
+  --dur: 420ms;
+  --dur-slow: 720ms;
+
+  /* surfaces / elevation */
+  --glass: rgba(251, 248, 242, 0.66);
+  --glass-blur: 14px;
+  --shadow-sm: 0 1px 2px rgba(44, 38, 32, 0.04);
+  --shadow: 0 1px 2px rgba(44, 38, 32, 0.04), 0 8px 24px -12px rgba(44, 38, 32, 0.14);
+  --shadow-lg: 0 1px 2px rgba(44, 38, 32, 0.05), 0 24px 60px -18px rgba(44, 38, 32, 0.22);
+
+  /* radii */
+  --radius: 16px;
+  --r-sm: 10px;
+  --r: 16px;
+  --r-lg: 24px;
+  --r-pill: 999px;
 }
 
 * { box-sizing: border-box; }
@@ -23,10 +51,33 @@ body {
   background: var(--sand);
   color: var(--ink);
   font-family: var(--sans);
+  font-size: var(--fs-body);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-h1, h2, h3, .serif { font-family: var(--serif); font-weight: 500; }
+h1, h2, h3, .serif { font-family: var(--serif); font-weight: 500; letter-spacing: -0.01em; }
+
+/* editorial rhythm */
+.display { font-family: var(--serif); font-weight: 500; font-size: var(--fs-display); line-height: 1.05; letter-spacing: -0.015em; }
+.eyebrow {
+  font-family: var(--sans);
+  font-size: var(--fs-eyebrow);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--clay);
+}
+
+/* global reduced-motion guard — collapse all animation app-wide */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 button {
   font-family: var(--sans);
@@ -121,6 +172,9 @@ button {
 .cta:hover { background: var(--clay-deep); }
 
 /* ---------- chat layout ---------- */
+/* .stage holds the animated view + the persistent rail (App.jsx) */
+.stage { flex: 1; display: flex; min-height: 0; }
+.view-anim { flex: 1; display: flex; min-height: 0; }
 .main { flex: 1; display: flex; min-height: 0; }
 .chat-col { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .thread { flex: 1; overflow-y: auto; padding: 28px clamp(16px, 6vw, 72px); }
