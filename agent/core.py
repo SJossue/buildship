@@ -53,6 +53,28 @@ def parse_action(raw: str) -> tuple[str, dict | None]:
         return reply, None
 
 
+# The canned mock script is authored for Jake. For any other profile, correct
+# the name and swap the Jake-specific life/taste clauses so the greeting never
+# addresses the wrong person (mirrored in app/src/mock/brain.js:personalize).
+_NAMES = {"pablo_v1": "Pablo", "guest_v1": "there"}
+_JAKE_LIFE = (
+    "Since you're working from home three days a week, I've been prioritizing "
+    "places with a daylight office, and I know Daisy needs a real yard. "
+)
+_JAKE_TASTE = "pale oak, linen, that bright Scandinavian calm you keep pinning"
+_TASTE = {"pablo_v1": "walnut, brushed brass, that warm mid-century glow you keep pinning"}
+
+
+def personalize(reply: str, profile_id: str) -> str:
+    if profile_id == "jake_v1":
+        return reply
+    name = _NAMES.get(profile_id, "there")
+    reply = reply.replace("Jake", name).replace(_JAKE_LIFE, "")
+    if profile_id in _TASTE:
+        reply = reply.replace(_JAKE_TASTE, _TASTE[profile_id])
+    return reply.replace("bright-and-airy is non-negotiable", "your taste is what matters")
+
+
 def build_turn_message(user_msg: str, recalled: list[dict]) -> str:
     if not recalled:
         return user_msg
@@ -97,6 +119,7 @@ class AgentSession:
     def _turn_mock(self, user_msg: str, recalled: list[dict]) -> dict:
         self.history.append({"role": "user", "content": build_turn_message(user_msg, recalled)})
         reply, action = parse_action(nebius.chat_mock(self.history))
+        reply = personalize(reply, self.profile_id)
         action = action or self._backstop(user_msg)
         self.history.append({"role": "assistant", "content": reply})
         return {"reply": reply, "action": action, "recalled": recalled, "new_facts": []}

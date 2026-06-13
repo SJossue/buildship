@@ -1,6 +1,24 @@
 // Mock conversation brain — mirrors agent/mocks/turns.json + the action/recall
 // shape the real /api/chat endpoint will return (design 04). Swap point: api.js.
 
+import { SPECS } from './data.js'
+
+// The canned script is authored for Jake. For any other profile, correct the
+// name and swap the Jake-specific taste/life clauses so the greeting never
+// addresses the wrong person (mirrored in agent/core.py:_personalize).
+const JAKE_LIFE = "Since you're working from home three days a week, I've been prioritizing places with a daylight office, and I know Daisy needs a real yard. "
+const JAKE_TASTE = 'pale oak, linen, that bright Scandinavian calm you keep pinning'
+const JAKE_NONNEG = 'bright-and-airy is non-negotiable'
+function personalize(reply, profileId) {
+  if (profileId === 'jake_v1') return reply
+  const spec = SPECS[profileId] ?? SPECS.jake_v1
+  return reply
+    .replaceAll('Jake', spec.name)
+    .replace(JAKE_LIFE, '')
+    .replace(JAKE_TASTE, `${spec.materials.slice(0, 2).join(', ')}, that ${spec.aesthetic_name} you keep pinning`)
+    .replace(JAKE_NONNEG, `your ${spec.aesthetic_name} is what matters`)
+}
+
 const TURNS = [
   {
     stage: 'S1',
@@ -54,12 +72,16 @@ function extractFacts(text) {
   return facts
 }
 
-export function respond(userText) {
+export function respond(userText, profileId = 'jake_v1') {
   const text = userText.toLowerCase()
   const new_facts = extractFacts(userText)
-  if (GENERATE_RE.test(text)) return { ...TURNS[2], new_facts }
-  for (const turn of TURNS) {
-    if (turn.keywords.every((kw) => text.includes(kw))) return { ...turn, new_facts }
+  const pick = () => {
+    if (GENERATE_RE.test(text)) return TURNS[2]
+    for (const turn of TURNS) {
+      if (turn.keywords.every((kw) => text.includes(kw))) return turn
+    }
+    return { stage: 'NONE', recalled: [], action: null, reply: DEFAULT_REPLY }
   }
-  return { stage: 'NONE', recalled: [], action: null, reply: DEFAULT_REPLY, new_facts }
+  const turn = pick()
+  return { ...turn, reply: personalize(turn.reply, profileId), new_facts }
 }

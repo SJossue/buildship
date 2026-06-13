@@ -26,7 +26,7 @@ export async function chat(profileId, message) {
   try {
     return await post('/api/chat', { profile_id: profileId, message })
   } catch {
-    const turn = respond(message)
+    const turn = respond(message, profileId)
     const all = MEMORIES[profileId] ?? []
     return {
       reply: turn.reply,
