@@ -883,3 +883,35 @@ button {
 
 /* passport entrance + display headline already via .display/.eyebrow utils */
 .passport h1.display { font-size: clamp(2.1rem, 1.6rem + 1.8vw, 3rem); margin-bottom: 6px; }
+
+/* ---------- finish pass: motion micro-tuning + chat composition ---------- */
+/* generating overlay — slim progress bar under the stage line */
+.gen-progress { width: min(320px, 60vw); height: 3px; border-radius: 3px; background: rgba(247, 243, 236, 0.18); margin-top: 22px; overflow: hidden; }
+.gen-progress-bar { display: block; height: 100%; width: 0; background: var(--clay); border-radius: 3px; animation: genFill 8s linear forwards; }
+@keyframes genFill { from { width: 0; } to { width: 100%; } }
+
+/* chat — centered conversation column + faint warm ambient so a sparse
+   thread reads as composed, not empty */
+.chat-col { background: radial-gradient(120% 55% at 50% -8%, rgba(168, 121, 78, 0.05), transparent 60%); }
+.thread { display: flex; flex-direction: column; align-items: center; }
+.thread > * { width: 100%; max-width: 720px; }
+.thread > .bubble.thinking { width: auto; align-self: flex-start; }
+.composer { width: 100%; max-width: 760px; margin: 0 auto; }
+
+/* hero handle — a brief one-shot hint that it's draggable (after the wipe) */
+.compare .handle { animation: handleHint 1.8s var(--ease) 0.9s 1 both; }
+@keyframes handleHint {
+  0%, 100% { box-shadow: 0 3px 14px rgba(44, 38, 32, 0.3); }
+  50% { box-shadow: 0 3px 14px rgba(44, 38, 32, 0.3), 0 0 0 9px rgba(168, 121, 78, 0.2); }
+}
+
+/* listing card — expo lift */
+.listing-card { transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+.listing-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+
+/* topbar profile switch — smooth */
+.profile-switch button { transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease); }
+
+/* warm-start + answer chips — expo hover */
+.answer-chip { transition: border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease); }
+.answer-chip:hover { box-shadow: var(--shadow); }
