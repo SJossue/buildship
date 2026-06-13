@@ -17,8 +17,8 @@ export const PLACEHOLDER = (label = 'render landing soon', align = 'center') => 
     'data:image/svg+xml;utf8,' +
     encodeURIComponent(
       `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500">
-      <rect width="100%" height="100%" fill="#E8E1D5"/>
-      <text x="${x}" y="50%" font-family="Georgia, serif" font-size="24" fill="#8A7E6D"
+      <rect width="100%" height="100%" fill="#ece5d8"/>
+      <text x="${x}" y="50%" font-family="Fraunces, Georgia, serif" font-size="24" fill="#a89a85"
         text-anchor="middle" dominant-baseline="middle">${label}</text>
     </svg>`,
     )
