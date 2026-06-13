@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { SPECS } from '../mock/data.js'
 import { applyNudges } from './TasteProfileView.jsx'
+import SpotlightCard from '../motion/SpotlightCard.jsx'
 
 // The "knows you" proof — sacred (design 05). Renders whatever memories the
 // API (or mock fallback) provides; facts recalled THIS turn pulse, facts
@@ -39,7 +40,7 @@ export default function MemoryRail({ profileId, spec: specOverride, memories, re
     <aside className="rail">
       <h2>What VISTA knows about {spec.name}</h2>
 
-      <button className="taste-card as-button" onClick={onOpenTaste}>
+      <SpotlightCard as="button" className="taste-card as-button" onClick={onOpenTaste}>
         <div className="name serif">{spec.aesthetic_name}</div>
         <div className="swatches">
           {spec.palette_hex.map((hex, i) => (
@@ -48,7 +49,7 @@ export default function MemoryRail({ profileId, spec: specOverride, memories, re
         </div>
         <div className="materials">{spec.materials.join(' · ')}</div>
         <div className="open-passport">Open taste passport →</div>
-      </button>
+      </SpotlightCard>
 
       <div className={'readiness' + (missing.length ? '' : ' ready')}>
         {missing.length

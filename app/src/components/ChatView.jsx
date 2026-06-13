@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import ListingCards from './ListingCards.jsx'
+import Reveal from '../motion/Reveal.jsx'
 
 // Act 2 — the conversation column. Messages may carry an inline card payload
 // (action.recommend) so discovery happens INSIDE the conversation. Design 08
@@ -18,7 +19,7 @@ export default function ChatView({ messages, profileId, thinking, rankOrder, onS
       <div className="thread">
         {messages.map((m, i) => (
           <div key={i}>
-            <div className={`bubble ${m.role}`}>{m.text}</div>
+            <Reveal y={10}><div className={`bubble ${m.role}`}>{m.text}</div></Reveal>
             {m.newFacts?.length > 0 && (
               <div className="saved-facts">
                 {m.newFacts.map((f) => (
@@ -37,7 +38,11 @@ export default function ChatView({ messages, profileId, thinking, rankOrder, onS
             )}
           </div>
         ))}
-        {thinking && <div className="bubble agent thinking">…</div>}
+        {thinking && (
+          <div className="bubble agent thinking">
+            <span className="think-dot" /><span className="think-dot" /><span className="think-dot" />
+          </div>
+        )}
         <div ref={endRef} />
       </div>
       <form

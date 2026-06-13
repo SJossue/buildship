@@ -1,4 +1,6 @@
 import { SPECS } from '../mock/data.js'
+import Reveal from '../motion/Reveal.jsx'
+import MagneticButton from '../motion/MagneticButton.jsx'
 
 // 04 · Taste Profile (design 08 §2) — promote the locked style_spec to a
 // designed "taste passport": aesthetic name, palette, materials, furniture
@@ -47,10 +49,10 @@ export default function TasteProfileView({ profileId, spec: specOverride, nudges
 
   return (
     <div className="taste-view">
-      <div className="passport">
+      <Reveal className="passport" y={18}>
         <button className="back" onClick={onBack}>← Back</button>
-        <div className="passport-label">Taste passport</div>
-        <h1>{spec.aesthetic_name}</h1>
+        <div className="passport-label eyebrow">Taste passport</div>
+        <h1 className="display">{spec.aesthetic_name}</h1>
         <p className="provenance">
           Built from your conversation
           {(base.provenance?.mood_boards ?? 0) > 0 && ` + ${base.provenance.mood_boards} mood boards`}
@@ -101,10 +103,10 @@ export default function TasteProfileView({ profileId, spec: specOverride, nudges
           </div>
         </div>
 
-        <button className="cta wide" onClick={onContinue}>
+        <MagneticButton className="cta wide" onClick={onContinue}>
           Find homes that fit
-        </button>
-      </div>
+        </MagneticButton>
+      </Reveal>
     </div>
   )
 }

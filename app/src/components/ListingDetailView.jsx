@@ -1,5 +1,8 @@
 import { LISTINGS, ROOM_LABELS, SPECS } from '../mock/data.js'
 import { rawPhoto, PLACEHOLDER } from '../assets.js'
+import Reveal from '../motion/Reveal.jsx'
+import MagneticButton from '../motion/MagneticButton.jsx'
+import SpotlightCard from '../motion/SpotlightCard.jsx'
 
 // 06 · Listing Detail (design 08 §2) — gives the home weight so the
 // transformation feels meaningful: gallery + specs + neighborhood + expanded
@@ -15,12 +18,13 @@ export default function ListingDetailView({ listingId, profileId, onGenerate, on
     <div className="detail">
       <button className="back" onClick={onBack}>← Back to conversation</button>
 
-      <div className="detail-head">
+      <Reveal className="detail-head">
+        <div className="eyebrow">A real home for sale</div>
         <h1>{listing.title}</h1>
         <div className="sub">
           {listing.price} · {listing.beds}bd {listing.baths}ba · {listing.sqft.toLocaleString()} sqft · {listing.location}
         </div>
-      </div>
+      </Reveal>
 
       <div className="gallery">
         {galleryRooms.map((room) => (
@@ -39,7 +43,7 @@ export default function ListingDetailView({ listingId, profileId, onGenerate, on
         <div className="detail-main">
           <p className="blurb">{listing.blurb}</p>
 
-          <h3>Why this fits you, {spec.name}</h3>
+          <h3 className="eyebrow">Why this fits you, {spec.name}</h3>
           <div className="why">
             {(listing.match_notes[profileId] ?? []).map((note) => (
               <span className="chip met" key={note}>✓ {note}</span>
@@ -49,12 +53,12 @@ export default function ListingDetailView({ listingId, profileId, onGenerate, on
             <p className="tradeoff">Honest tradeoff: {listing.tradeoff[profileId]}.</p>
           )}
 
-          <h3>The neighborhood</h3>
+          <h3 className="eyebrow">The neighborhood</h3>
           <p className="blurb">{listing.neighborhood_note}</p>
         </div>
 
         <div className="hero-cta-stage">
-          <div className="hero-cta-card">
+          <SpotlightCard className="hero-cta-card">
             <div className="swatches">
               {spec.palette_hex.map((hex) => (
                 <div key={hex} className="swatch" style={{ background: hex }} />
@@ -64,13 +68,13 @@ export default function ListingDetailView({ listingId, profileId, onGenerate, on
               Same rooms, same architecture — re-imagined in your {spec.aesthetic_name}.
             </p>
             {listing.hero ? (
-              <button className="cta wide" onClick={() => onGenerate(listing.listing_id)}>
+              <MagneticButton className="cta wide" onClick={() => onGenerate(listing.listing_id)}>
                 See this home in your style
-              </button>
+              </MagneticButton>
             ) : (
               <p className="cta-note">Restyle available on your top match first.</p>
             )}
-          </div>
+          </SpotlightCard>
         </div>
       </div>
     </div>
