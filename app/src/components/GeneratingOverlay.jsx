@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { SPECS } from '../mock/data.js'
 import { rawPhoto } from '../assets.js'
 
@@ -54,7 +55,19 @@ export default function GeneratingOverlay({ profileId, onDone }) {
           <div key={hex} className="dot" style={{ background: hex }} />
         ))}
       </div>
-      <div className="stage-line">{stages[stageIdx]}</div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          className="stage-line"
+          key={stageIdx}
+          initial={{ opacity: 0, y: 8, filter: 'blur(6px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, y: -8, filter: 'blur(6px)' }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {stages[stageIdx]}
+        </motion.div>
+      </AnimatePresence>
+      <div className="gen-progress"><span className="gen-progress-bar" /></div>
     </div>
   )
 }

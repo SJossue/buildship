@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { SPECS } from '../mock/data.js'
 import { rawPhoto } from '../assets.js'
+import Reveal from '../motion/Reveal.jsx'
+import MagneticButton from '../motion/MagneticButton.jsx'
 
 // Act 1 — an invitation, not a search bar. Submitting doesn't navigate to
 // results; it BECOMES the first chat message (the search bar becomes the chat).
@@ -27,37 +29,40 @@ export default function Welcome({ profileId, onStart, onKeepGoing, onThingsChang
         />
       )}
       <div className="welcome-content">
-        <h1>Tell me about the home you're looking for.</h1>
-        <p>VISTA already knows your taste. Start anywhere — a city, a feeling, a must-have.</p>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            if (text.trim()) onStart(text.trim())
-          }}
-        >
-          <input
-            autoFocus
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="We're finally ready to look in Austin…"
-          />
-          <button className="cta" type="submit">Let's talk</button>
-        </form>
+        <Reveal delay={0.05}><div className="eyebrow welcome-eyebrow">A home that already knows you</div></Reveal>
+        <Reveal delay={0.12}><h1 className="display">Tell me about the home you're looking for.</h1></Reveal>
+        <Reveal delay={0.22}><p>VISTA already knows your taste. Start anywhere — a city, a feeling, a must-have.</p></Reveal>
+        <Reveal delay={0.32}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (text.trim()) onStart(text.trim())
+            }}
+          >
+            <input
+              autoFocus
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="We're finally ready to look in Austin…"
+            />
+            <MagneticButton className="cta" type="submit">Let's talk</MagneticButton>
+          </form>
+        </Reveal>
 
-        <div className="warm-starts">
+        <Reveal delay={0.42} className="warm-starts">
           {WARM_STARTS.map((w) => (
             <button key={w} className="answer-chip" onClick={() => setText((t) => (t ? `${t}, ${w.toLowerCase()}` : w))}>
               {w}
             </button>
           ))}
-        </div>
+        </Reveal>
 
-        <div className="returning">
+        <Reveal delay={0.52} className="returning">
           <span>Welcome back, {spec.name}.</span>
           <button onClick={onKeepGoing}>Keep going where we left off</button>
           <span className="dot-sep">·</span>
           <button onClick={onThingsChanged}>Things changed — let's catch up</button>
-        </div>
+        </Reveal>
       </div>
     </div>
   )

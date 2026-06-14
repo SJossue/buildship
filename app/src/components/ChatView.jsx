@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import CuratedSet from './CuratedSet.jsx'
+import Reveal from '../motion/Reveal.jsx'
 import { REFINES } from '../mock/discovery.js'
 import { LISTINGS } from '../mock/data.js'
 
@@ -77,7 +78,7 @@ export default function ChatView({
                 __html: m.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>'),
               }} /></div>
             ) : (
-              m.text && <div className={`bubble ${m.role}`}>{m.text}</div>
+              m.text && <Reveal y={10}><div className={`bubble ${m.role}`}>{m.text}</div></Reveal>
             )}
             {m.trace?.length > 0 && (
               <div className="turn-trace">✦ {m.trace.join(' · ')}</div>

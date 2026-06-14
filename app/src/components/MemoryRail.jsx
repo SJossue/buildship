@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { LISTINGS, SPECS } from '../mock/data.js'
 import { FEATURES, START_WEIGHTS, WEIGHT_CAP } from '../mock/discovery.js'
 import { applyNudges } from './TasteProfileView.jsx'
+import SpotlightCard from '../motion/SpotlightCard.jsx'
 import Stamp, { CompassIcon, UserIcon } from './Stamp.jsx'
 import { AREA_INTEL, liveAreaNotes } from '../mock/areas.js'
 
@@ -137,7 +138,7 @@ export default function MemoryRail({ profileId, spec: specOverride, weights, sav
 
       <h2>What VISTA knows about {spec.name}</h2>
 
-      <button className="taste-card as-button" onClick={onOpenTaste}>
+      <SpotlightCard as="button" className="taste-card as-button" onClick={onOpenTaste}>
         <div className="name serif">{spec.aesthetic_name}</div>
         <div className="swatches">
           {spec.palette_hex.map((hex, i) => (
@@ -146,7 +147,7 @@ export default function MemoryRail({ profileId, spec: specOverride, weights, sav
         </div>
         <div className="materials">{spec.materials.join(' · ')}</div>
         <div className="open-passport">Open taste passport →</div>
-      </button>
+      </SpotlightCard>
 
       <div className={'readiness' + (missing.length ? '' : ' ready')}>
         {missing.length
